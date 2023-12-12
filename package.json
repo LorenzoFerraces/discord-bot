@@ -1,0 +1,25 @@
+{
+  "name": "discord-bot",
+  "version": "1.0.0",
+  "description": "first discord bot",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LorenzoFerraces/discord-bot.git"
+  },
+  "author": "Lorenzo Ferraces",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/LorenzoFerraces/discord-bot/issues"
+  },
+  "homepage": "https://github.com/LorenzoFerraces/discord-bot#readme",
+  "dependencies": {
+    "discord.js": "^14.14.1"
+  },
+  "devDependencies": {
+    "eslint": "^8.55.0"
+  }
+}
