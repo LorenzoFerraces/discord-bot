@@ -6,7 +6,7 @@ module.exports = {
 		.setName('server')
 		.setDescription('Provides information about the server.'),
 	async execute(interaction) {
-    // interaction.guild.name does not exists, lookup documentation later
+    // need bot permission to get guild name
 		await interaction.reply(`This server is ${interaction.guild.name} and has ${interaction.guild.memberCount} members.`);
 	},
 };
