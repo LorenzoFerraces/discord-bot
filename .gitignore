@@ -1,3 +1,4 @@
 config.json
 node_modules
 deploy-commands-guild.js
+.eslintrc.json
