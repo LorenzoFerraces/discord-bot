@@ -1,4 +1,4 @@
-const { ActionRowBuilder, SlashCommandBuilder, ButtonBuilder, ButtonStyle, RoleSelectMenuBuilder } = require('discord.js');
+const { ActionRowBuilder, ComponentType, SlashCommandBuilder, ButtonBuilder, ButtonStyle, RoleSelectMenuBuilder } = require('discord.js');
 
 // genera un pedido de consulta en un canal predeterminado
 
@@ -8,41 +8,78 @@ module.exports = {
     .setName('consulta')
     .setDescription('genera un pedido de consulta'),
 
-  async execute(interaction) {
+  async execute(solicitud) {
+
+    const miembro = solicitud.member;
+    const nombreUsuario = solicitud.user.username;
+    const canalColaboradores = '1186756489956831362';
+
+    // crear el boton para elegir el canal asignado
     const menuCanal = new RoleSelectMenuBuilder()
       .setCustomId('canal')
       .setPlaceholder('elegi el canal para hacer la consulta');
 
+    const rowColab = new ActionRowBuilder()
+     .addComponents(menuCanal);
+
+    // crear el boton para cancelar el pedido
     const botonCancelar = new ButtonBuilder()
       .setCustomId('cancelar')
       .setLabel('Cancelar')
       .setStyle(ButtonStyle.Danger);
 
-      const rowColab = new ActionRowBuilder()
-        .addComponents(menuCanal);
-
       const rowConsulta = new ActionRowBuilder()
         .addComponents(botonCancelar);
 
-      const responseConsulta = await interaction.reply({
+      // espera la cancelacion del pedido
+      const responseConsulta = await solicitud.reply({
         content: 'La consulta fue enviada, toca el boton para cancelar',
         components: [rowConsulta],
+        ephemeral: true,
       });
 
-      const canal = await interaction.guild.channels.fetch('1186756489956831362');
-      canal.send({
-        content: `el usuario ${interaction.user.username} solicita una consulta`,
+      // envia el mensaje al canal de colaboradores y espera la asignacion
+      const canal = await solicitud.guild.channels.fetch(canalColaboradores);
+      const asignacion = await canal.send({
+        content: `el usuario ${nombreUsuario} solicita una consulta`,
         components: [rowColab],
       });
 
-      const collectorFilter = i => i.user.id === interaction.user.id;
+      // crea un collector para recibir la respuesta de la asignacion
+      const collector = asignacion.createMessageComponentCollector({
+        componentType: ComponentType.RoleSelect,
+        time: 3_600_000,
+      });
 
+      // asigna el rol elegido al usuario que invoco el comando
+      collector.on('collect', async i => {
+        const rolAsignado = i.values[0];
+        miembro.roles.add(rolAsignado);
+        asignacion.delete();
+        await solicitud.editReply({
+          // rolAsignado.name == undefined, buscar error
+          content: `la solicitud fue aceptada por ${i.user.username} en el canal ${rolAsignado.name}`,
+          components: [],
+          ephemeral: true,
+        });
+      });
+
+
+      // recibe la cancelacion y borra tanto la respuesta al mensaje
+      // como el pedido en el canal de colaboradores
      try {
-      const confirmation = await responseConsulta.awaitMessageComponent({ filter: collectorFilter, time: 60000 });
-      if (confirmation.customId === 'cancelar') {
-        await confirmation.deleteReply();
+      const cancelacion = await responseConsulta.awaitMessageComponent({});
+      if (cancelacion.customId === 'cancelar') {
+        await asignacion.delete();
+        await cancelacion.update({
+          content: 'cancelado exitosamente',
+          components: [],
+          ephemeral: true,
+        });
+        console.log(`solicitud cancelada, id: ${cancelacion.id}`);
       }} catch (e) {
-      await interaction.editReply({ content: 'Confirmation not received within 1 minute, cancelling', components: [] });
+        console.log(e);
+        await solicitud.editReply({ content: 'Confirmation not received within 1 minute, cancelling', components: [] });
     }
 
 
